@@ -1,0 +1,63 @@
+#All appropriate libraries and classes are imported
+#Specifically, the classes for the buzzer, LED Light, and sensor
+from gpiozero import LED
+from gpiozero import Buzzer
+import PCF8591_3 as ADC
+import RPi.GPIO as GPIO
+import time
+
+#LED nad buzzer are set to their appropriate pins matching their postions on the breadboard
+red_led = LED(11)
+green_led = LED(12)
+buzz = Buzzer(13)
+#LED and buzzer are both initially turned off until the data can be collected from the sensor
+buzz.off()
+red_led.off()
+green_led.off()
+
+def setup():
+	ADC.setup(0x48)
+
+#Core function is defined
+def loop():
+	#Variables are initialized
+	count = 0
+	data=[0,0,0,0,0,0,0,0,0,0]
+	sum_data=0
+	avg_data=0
+	#Loop defined that will carry out the main function of the program and run continuously
+	while True:
+	#Sound sensor collects data continuouslt at an interval of 'time.sleep(#)'
+	voiceValue=(ADC.read(0))
+	time.sleep(0)
+	#Conditional statement made to cancel out inaccurate sensor fluctuations
+	if voiceValue <= 190:
+		#Data from sensor assigned to a list. Then, the average of the last 10 values of the lust at every single iteration is determined
+		data.append(voiceValue)
+		sum_data=data[-1] + data[-2] + data[-3] + data[-4] + data[-5] + data[-6] + data[-7] + data[-8] + data[-9] + data[-10]
+		avg_data = sum_data/10
+		print("Sound value: ",avg_data)
+		print("------------------------------------------------------------------")
+		#After the average values are continuously printed they are used in a conditional statement.
+		#If the average values are lower (louder) than a safe range, red LED turns on and count begins.
+		#If in the safe range (quieter) then light is green adn buzzer stops.
+		if avg_data <= 115:
+			green_led.off()
+			red_led.on()
+			count+=1
+		else:
+			red_led.off()
+			green_led.on()
+			buzz.on()
+			count=0
+		#When count reaches a certain value (specific amount of time has passed in the unsafe range), buzzer turns on.
+		if count>=100:
+			buzz.off()
+		else:
+			buzz.on()
+if __name__ == '__main__':
+	try:
+		setup()
+		loop()
+	except KeyboardInterrupt:
+		pass
